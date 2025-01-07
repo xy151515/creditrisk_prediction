@@ -24,26 +24,20 @@ def predict_default(input_data, stacked_model, selected_features, scaler):
 stacked_model, selected_features, scaler, evaluation_metrics = load_models()
 
 # Streamlit UI
-# App title
-st.title("Credit Risk Prediction App")
+def main():
+    st.set_page_config(page_title="Loan Default Prediction", layout="wide")
 
-# Sidebar navigation
-st.sidebar.title("Navigation")
-app_mode = st.sidebar.selectbox(
-    "Choose an option:",
-    ["Home", "Upload Data", "Performance Metrics"]
-)
+    # Sidebar navigation
+    st.sidebar.title("Navigation")
+    choice = st.sidebar.selectbox(
+        "Choose an option:",
+        ["Home", "Prediction", "Performance Metrics"]
+    )
 
-# Home section
-if app_mode == "Home":
-    st.header("Welcome to the Credit Risk Prediction App")
-    st.write("""
-        This application predicts the likelihood of loan default using a pre-trained machine learning model.
-        Features include:
-        - Uploading new loan application data for prediction
-        - Viewing model performance metrics
-        - Understanding feature importance
-    """)
+    if choice == "Home":
+        st.title("Credit Risk Prediction App")
+        st.write("Welcome to the Credit Risk Prediction App. Use this application to predict the likelihood of loan defaults based on input data.")
+        st.write("Navigate through the sidebar to explore features such as predictions and model performance metrics.")
 
     elif choice == "Prediction":
         st.title("Loan Default Prediction")
@@ -76,14 +70,21 @@ if app_mode == "Home":
                     mime="text/csv",
                 )
 
-# Performance Metrics section
-    elif app_mode == "Performance Metrics":
-        st.header("Model Performance Metrics")
-        st.metric("Accuracy", f"{evaluation_metrics['accuracy']:.4f}")
-        st.metric("Precision", f"{evaluation_metrics['precision']:.4f}")
-        st.metric("Recall", f"{evaluation_metrics['recall']:.4f}")
-        st.metric("AUC-ROC", f"{evaluation_metrics['auc_roc']:.4f}")
-    
+    elif choice == "Performance Metrics":
+        st.title("Model Performance Metrics")
+
+        st.write("### Accuracy")
+        st.write(f"{evaluation_metrics['classification_report']['accuracy']:.4f}")
+
+        st.write("### Precision")
+        st.write(f"{evaluation_metrics['classification_report']['1']['precision']:.4f}")
+
+        st.write("### Recall")
+        st.write(f"{evaluation_metrics['classification_report']['1']['recall']:.4f}")
+
+        st.write("### AUC-ROC")
+        st.write(f"{evaluation_metrics['auc_roc_score']:.4f}")
+
         st.write("For detailed insights, refer to the model evaluation JSON file.")
 
 if __name__ == "__main__":
