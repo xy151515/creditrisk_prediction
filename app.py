@@ -29,32 +29,51 @@ def home():
     3. Visit "SHAP Interpretability" to understand model decisions.
     """)
 
+
+import streamlit as st
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
 def prediction():
     st.title("Prediction")
-    uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
     
+    # File upload
+    uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
     if uploaded_file:
         # Load and preview uploaded data
         input_data = pd.read_csv(uploaded_file)
         st.write("Uploaded Data Preview:")
         st.write(input_data.head())
         
+        # Debugging: Check features in the uploaded file
+        st.write("Uploaded Data Columns:", input_data.columns)
+        st.write("Uploaded Data Shape:", input_data.shape)
+        
         # Validate required features
         missing_features = [col for col in selected_features if col not in input_data.columns]
         if missing_features:
             st.error(f"The following required features are missing: {missing_features}")
-        else:
-            # Ensure columns are in the correct order
-            input_data = input_data[selected_features]
-            
-            # Apply preprocessing (adjust based on your model training pipeline)
-            # Example: Scaling numerical features
-            from sklearn.preprocessing import StandardScaler
-            
+            return  # Stop if features are missing
+        
+        # Ensure the correct column order
+        input_data = input_data[selected_features]
+        st.write("Validated and Ordered Data Sample:")
+        st.write(input_data.head())
+
+        # Apply preprocessing (example: scaling)
+        try:
             scaler = StandardScaler()
-            input_data_scaled = scaler.fit_transform(input_data)  # Use the same scaler from training
+            input_data_scaled = scaler.fit_transform(input_data)
             
-            # Make predictions
+            # Debugging: Log scaled data
+            st.write("Scaled Data Sample:")
+            st.write(input_data_scaled[:5])
+        except Exception as e:
+            st.error(f"Preprocessing failed: {e}")
+            return
+        
+        # Predict probabilities
+        try:
             predictions_proba = stacked_model.predict_proba(input_data_scaled)[:, 1]
             input_data["Default Probability"] = predictions_proba
             input_data["Prediction"] = (predictions_proba > 0.5).astype(int)
@@ -63,13 +82,17 @@ def prediction():
             st.write("Prediction Results:")
             st.write(input_data[["Default Probability", "Prediction"]])
             
-            # Allow user to download results
+            # Allow download
             st.download_button(
                 label="Download Predictions as CSV",
                 data=input_data.to_csv(index=False),
                 file_name="predictions.csv",
                 mime="text/csv",
             )
+        except ValueError as e:
+            st.error(f"Prediction failed: {e}")
+    else:
+        st.write("Please upload a file to proceed.")
 
 
 # Evaluation Metrics Page
