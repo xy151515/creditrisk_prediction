@@ -40,8 +40,11 @@ def prediction():
     uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
     if uploaded_file:
         input_data = pd.read_csv(uploaded_file)
-        st.write("Uploaded Data Columns:", input_data.columns.tolist())
-        st.write("Uploaded Data Shape:", input_data.shape)
+        st.write("Uploaded Data Columns (Before Processing):", input_data.columns.tolist())
+        st.write("Uploaded Data Shape (Before Processing):", input_data.shape)
+
+        # Check selected features
+        st.write("Expected Features (Selected Features):", selected_features)
 
         # Validate uploaded data
         missing_features = [col for col in selected_features if col not in input_data.columns]
@@ -49,39 +52,34 @@ def prediction():
             st.error(f"The following required features are missing: {missing_features}")
             for feature in missing_features:
                 input_data[feature] = 0  # Add missing features with default value
-        
+
         # Reorder columns
-        input_data = input_data[selected_features]
+        try:
+            input_data = input_data[selected_features]
+        except Exception as e:
+            st.error(f"Error reordering columns: {e}")
+            return
+
         st.write("Validated and Ordered Data Sample:")
         st.write(input_data.head())
-
-        # Check data types
-        st.write("Feature Data Types Before Scaling:")
-        st.write(input_data.dtypes)
+        st.write("Final Input Data Shape (Aligned to Selected Features):", input_data.shape)
 
         # Preprocess non-numeric columns
         try:
-            # Example preprocessing: convert necessary columns to numeric
             input_data['grade'] = input_data['grade'].astype(int)
             input_data['subGrade'] = input_data['subGrade'].astype(int)
             input_data['homeOwnership'] = input_data['homeOwnership'].astype(int)
+            # Add more preprocessing steps for other features if necessary
         except Exception as e:
             st.error(f"Error during preprocessing: {e}")
             return
 
         # Apply scaling
         try:
-            st.write("Data Passed to Scaler (Before Scaling):")
-            st.write(input_data.head())
             st.write("Shape of Data Passed to Scaler:", input_data.shape)
-
             scaler = StandardScaler()
             input_data_scaled = scaler.fit_transform(input_data)
-
             st.write("Scaled Data Shape (After Scaling):", input_data_scaled.shape)
-            if input_data_scaled.shape[1] != len(selected_features):
-                st.error(f"Mismatch: Model expects {len(selected_features)} features but got {input_data_scaled.shape[1]}")
-                return
         except Exception as e:
             st.error(f"Scaling failed: {e}")
             return
@@ -106,6 +104,7 @@ def prediction():
             st.error(f"Prediction failed: {e}")
     else:
         st.write("Please upload a file to proceed.")
+
 
 # Evaluation Metrics Page
 def evaluation():
