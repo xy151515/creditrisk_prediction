@@ -14,6 +14,10 @@ with open("stacked_model.pkl", "rb") as model_file:
 with open("selected_features.pkl", "rb") as features_file:
     selected_features = pickle.load(features_file)
 
+# Load the scaler
+with open("scaler.pkl", "rb") as scaler_file:
+    scaler = pickle.load(scaler_file)
+
 # Home Page
 def home():
     st.title("Credit Risk Prediction App")
