@@ -4,14 +4,20 @@ import joblib
 import json
 
 def load_models():
-    """Load the saved models and files."""
+    """Load and patch the saved models and files."""
     import warnings
+    from sklearn.ensemble import StackingClassifier
     from sklearn.preprocessing import StandardScaler
 
     warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 
     try:
         stacked_model = joblib.load("stacked_model.pkl")
+        
+        # Patch the _label_encoder attribute if missing
+        if isinstance(stacked_model, StackingClassifier) and not hasattr(stacked_model, "_label_encoder"):
+            stacked_model._label_encoder = None
+
         selected_features = joblib.load("selected_features.pkl")
         scaler = joblib.load("scaler.pkl")
         if not isinstance(scaler, StandardScaler):
@@ -24,6 +30,7 @@ def load_models():
         evaluation_metrics = json.load(f)
 
     return stacked_model, selected_features, scaler, evaluation_metrics
+
 
 def validate_input_data(input_data, selected_features):
     """Validate the input data against selected features."""
@@ -56,6 +63,7 @@ def predict_default(input_data, stacked_model, selected_features, scaler):
         raise ValueError(f"Error during prediction: {e}")
 
     return predictions, probabilities
+
 
 # Load models and data
 try:
