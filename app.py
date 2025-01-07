@@ -102,7 +102,12 @@ def prediction():
                 label="Download Predictions as CSV",
                 data=input_data.to_csv(index=False),
                 file_name="predictions.csv",
-                mime="text/csv
+                mime="text/csv",
+            )
+        except ValueError as e:
+            st.error(f"Prediction failed: {e}")
+    else:
+        st.write("Please upload a file to proceed.")
 
 
 # Evaluation Metrics Page
