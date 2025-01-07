@@ -29,6 +29,9 @@ def home():
     3. Visit "SHAP Interpretability" to understand model decisions.
     """)
 
+import streamlit as st
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 def prediction():
     st.title("Prediction")
