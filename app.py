@@ -33,81 +33,70 @@ import streamlit as st
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+# Prediction Page
 def prediction():
     st.title("Prediction")
-    
-    # File upload
     uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
+    
     if uploaded_file:
-        # Load uploaded data
         input_data = pd.read_csv(uploaded_file)
-        st.write("Uploaded Data Columns:", input_data.columns.tolist())
-        st.write("Uploaded Data Shape:", input_data.shape)
-        
-        # Check for missing features
-        missing_features = [col for col in selected_features if col not in input_data.columns]
-        st.write("Missing Features:", missing_features)
-        for feature in missing_features:
-            input_data[feature] = 0  # Add missing features with default values
-        
-        # Reorder columns
-        input_data = input_data[selected_features]
-        st.write("Validated and Ordered Data Sample:")
+        st.write("Uploaded Data Preview:")
         st.write(input_data.head())
         
-        # Apply scaling
-        try:
-            scaler = StandardScaler()
-            input_data_scaled = scaler.fit_transform(input_data)
-            st.write("Scaled Data Sample:")
-            st.write(input_data_scaled[:5])
-        except Exception as e:
-            st.error(f"Preprocessing failed: {e}")
-            return
-        
-        # Predict probabilities
-        try:
-            predictions_proba = stacked_model.predict_proba(input_data_scaled)[:, 1]
+        # Validate required features
+        missing_features = [col for col in selected_features if col not in input_data.columns]
+        if missing_features:
+            st.error(f"The following required features are missing: {missing_features}")
+        else:
+            input_data = input_data[selected_features]
+            predictions_proba = stacked_model.predict_proba(input_data)[:, 1]
             input_data["Default Probability"] = predictions_proba
             input_data["Prediction"] = (predictions_proba > 0.5).astype(int)
             
             st.write("Prediction Results:")
             st.write(input_data[["Default Probability", "Prediction"]])
             
-            # Allow results download
+            # Download results
             st.download_button(
                 label="Download Predictions as CSV",
                 data=input_data.to_csv(index=False),
                 file_name="predictions.csv",
                 mime="text/csv",
             )
-        except ValueError as e:
-            st.error(f"Prediction failed: {e}")
-    else:
-        st.write("Please upload a file to proceed.")
-
 
 # Evaluation Metrics Page
-def performance_metrics():
-    st.title("Credit Risk Prediction App")
-    st.subheader("Model Performance Metrics")
+def evaluation():
+    st.title("Evaluation Metrics")
+    st.write("""
+    Evaluate the model's performance using:
+    - Classification Report
+    - AUC-ROC Score
+    - Confusion Matrix
+    """)
 
-    # Replace these with actual values from your evaluation data
-    accuracy = 0.8744
-    precision = 0.9372
-    recall = 0.8025
-    auc_roc = 0.9312
+    # Load evaluation data
+    with open("evaluation_data.pkl", "rb") as eval_file:
+        evaluation_data = pickle.load(eval_file)
+    
+    y_test = evaluation_data["y_test"]
+    y_pred = evaluation_data["y_pred"]
+    y_pred_proba = evaluation_data["y_pred_proba"]
 
-    # Display metrics
-    st.markdown(f"### Accuracy\n{accuracy:.4f}")
-    st.markdown(f"### Precision\n{precision:.4f}")
-    st.markdown(f"### Recall\n{recall:.4f}")
-    st.markdown(f"### AUC-ROC\n{auc_roc:.4f}")
+    # Classification Report
+    st.subheader("Classification Report")
+    report = classification_report(y_test, y_pred, output_dict=True)
+    st.write(pd.DataFrame(report).transpose())
 
-    # Additional information or link
-    st.markdown(
-        "For detailed insights, refer to the model evaluation JSON file."
-    )
+    # AUC-ROC Score
+    st.subheader("AUC-ROC Score")
+    auc = roc_auc_score(y_test, y_pred_proba)
+    st.write(f"AUC-ROC Score: {auc:.4f}")
+
+    # Confusion Matrix
+    st.subheader("Confusion Matrix")
+    fig, ax = plt.subplots()
+    ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax, cmap="Blues")
+    st.pyplot(fig)
 
 
 # SHAP Interpretability Page
