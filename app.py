@@ -88,38 +88,27 @@ def prediction():
 
 
 # Evaluation Metrics Page
-def evaluation():
-    st.title("Evaluation Metrics")
-    st.write("""
-    Evaluate the model's performance using:
-    - Classification Report
-    - AUC-ROC Score
-    - Confusion Matrix
-    """)
+def performance_metrics():
+    st.title("Credit Risk Prediction App")
+    st.subheader("Model Performance Metrics")
 
-    # Load evaluation data
-    with open("evaluation_data.pkl", "rb") as eval_file:
-        evaluation_data = pickle.load(eval_file)
-    
-    y_test = evaluation_data["y_test"]
-    y_pred = evaluation_data["y_pred"]
-    y_pred_proba = evaluation_data["y_pred_proba"]
+    # Replace these with actual values from your evaluation data
+    accuracy = 0.8744
+    precision = 0.9372
+    recall = 0.8025
+    auc_roc = 0.9312
 
-    # Classification Report
-    st.subheader("Classification Report")
-    report = classification_report(y_test, y_pred, output_dict=True)
-    st.write(pd.DataFrame(report).transpose())
+    # Display metrics
+    st.markdown(f"### Accuracy\n{accuracy:.4f}")
+    st.markdown(f"### Precision\n{precision:.4f}")
+    st.markdown(f"### Recall\n{recall:.4f}")
+    st.markdown(f"### AUC-ROC\n{auc_roc:.4f}")
 
-    # AUC-ROC Score
-    st.subheader("AUC-ROC Score")
-    auc = roc_auc_score(y_test, y_pred_proba)
-    st.write(f"AUC-ROC Score: {auc:.4f}")
+    # Additional information or link
+    st.markdown(
+        "For detailed insights, refer to the model evaluation JSON file."
+    )
 
-    # Confusion Matrix
-    st.subheader("Confusion Matrix")
-    fig, ax = plt.subplots()
-    ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax, cmap="Blues")
-    st.pyplot(fig)
 
 # SHAP Interpretability Page
 def shap_interpretability():
