@@ -35,51 +35,30 @@ from sklearn.preprocessing import StandardScaler
 
 def prediction():
     st.title("Prediction")
-    
+
     # File upload
     uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
     if uploaded_file:
         input_data = pd.read_csv(uploaded_file)
-        st.write("Uploaded Data Columns (Before Processing):", input_data.columns.tolist())
-        st.write("Uploaded Data Shape (Before Processing):", input_data.shape)
+        st.write("Uploaded Data Columns:", input_data.columns.tolist())
+        st.write("Uploaded Data Shape:", input_data.shape)
 
-        # Check selected features
-        st.write("Expected Features (Selected Features):", selected_features)
-
-        # Validate uploaded data
+        # Align columns to selected_features
         missing_features = [col for col in selected_features if col not in input_data.columns]
         if missing_features:
             st.error(f"The following required features are missing: {missing_features}")
             for feature in missing_features:
-                input_data[feature] = 0  # Add missing features with default value
+                input_data[feature] = 0
 
         # Reorder columns
-        try:
-            input_data = input_data[selected_features]
-        except Exception as e:
-            st.error(f"Error reordering columns: {e}")
-            return
-
+        input_data = input_data[selected_features]
         st.write("Validated and Ordered Data Sample:")
         st.write(input_data.head())
-        st.write("Final Input Data Shape (Aligned to Selected Features):", input_data.shape)
 
-        # Preprocess non-numeric columns
+        # Apply preprocessing
         try:
-            input_data['grade'] = input_data['grade'].astype(int)
-            input_data['subGrade'] = input_data['subGrade'].astype(int)
-            input_data['homeOwnership'] = input_data['homeOwnership'].astype(int)
-            # Add more preprocessing steps for other features if necessary
-        except Exception as e:
-            st.error(f"Error during preprocessing: {e}")
-            return
-
-        # Apply scaling
-        try:
-            st.write("Shape of Data Passed to Scaler:", input_data.shape)
-            scaler = StandardScaler()
-            input_data_scaled = scaler.fit_transform(input_data)
-            st.write("Scaled Data Shape (After Scaling):", input_data_scaled.shape)
+            input_data_scaled = scaler.transform(input_data)
+            st.write("Scaled Data Shape:", input_data_scaled.shape)
         except Exception as e:
             st.error(f"Scaling failed: {e}")
             return
@@ -89,18 +68,18 @@ def prediction():
             predictions_proba = stacked_model.predict_proba(input_data_scaled)[:, 1]
             input_data["Default Probability"] = predictions_proba
             input_data["Prediction"] = (predictions_proba > 0.5).astype(int)
-            
+
             st.write("Prediction Results:")
             st.write(input_data[["Default Probability", "Prediction"]])
-            
-            # Allow results download
+
+            # Allow download
             st.download_button(
                 label="Download Predictions as CSV",
                 data=input_data.to_csv(index=False),
                 file_name="predictions.csv",
                 mime="text/csv",
             )
-        except ValueError as e:
+        except Exception as e:
             st.error(f"Prediction failed: {e}")
     else:
         st.write("Please upload a file to proceed.")
