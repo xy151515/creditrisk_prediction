@@ -18,6 +18,11 @@ with open("selected_features.pkl", "rb") as features_file:
 with open("scaler.pkl", "rb") as scaler_file:
     scaler = pickle.load(scaler_file)
 
+# Load the label encoder
+with open("label_encoder.pkl", "rb") as le_file:
+    label_encoder = pickle.load(le_file)
+
+
 # Home Page
 def home():
     st.title("Credit Risk Prediction App")
