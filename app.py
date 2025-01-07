@@ -4,25 +4,33 @@ import joblib
 import json
 
 def load_models():
-    """Load the patched model and associated files."""
+    """Load the saved models and files."""
     stacked_model = joblib.load("stacked_model_patched.pkl")  # Use the patched model
     selected_features = joblib.load("selected_features.pkl")
-    scaler = joblib.load("scaler.pkl")
+    try:
+        scaler = joblib.load("scaler.pkl")
+        if scaler is None:
+            raise ValueError("Scaler object is None.")
+    except Exception as e:
+        raise ValueError(f"Error loading scaler: {e}")
+
     with open("evaluation_metrics.json", "r") as f:
         evaluation_metrics = json.load(f)
     return stacked_model, selected_features, scaler, evaluation_metrics
 
+
 def predict_default(input_data, stacked_model, selected_features, scaler):
     """Predict loan default using the stacked model."""
     input_data = pd.DataFrame(input_data, columns=selected_features)
-    scaled_data = scaler.transform(input_data)
     try:
-        predictions = stacked_model.predict(scaled_data)
-        probabilities = stacked_model.predict_proba(scaled_data)[:, 1]
+        scaled_data = scaler.transform(input_data)
     except AttributeError as e:
-        st.error("Error: The loaded model might not be compatible or correctly saved. Please check the model file.")
-        raise e
+        raise ValueError("Scaler is not loaded correctly. Please check the scaler file.") from e
+
+    predictions = stacked_model.predict(scaled_data)
+    probabilities = stacked_model.predict_proba(scaled_data)[:, 1]
     return predictions, probabilities
+
 
 # Load models and data
 try:
