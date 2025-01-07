@@ -16,12 +16,20 @@ def predict_default(input_data, stacked_model, selected_features, scaler):
     """Predict loan default using the stacked model."""
     input_data = pd.DataFrame(input_data, columns=selected_features)
     scaled_data = scaler.transform(input_data)
-    predictions = stacked_model.predict(scaled_data)
-    probabilities = stacked_model.predict_proba(scaled_data)[:, 1]
+    try:
+        predictions = stacked_model.predict(scaled_data)
+        probabilities = stacked_model.predict_proba(scaled_data)[:, 1]
+    except AttributeError as e:
+        st.error("Error: The loaded model might not be compatible or correctly saved. Please check the model file.")
+        raise e
     return predictions, probabilities
 
 # Load models and data
-stacked_model, selected_features, scaler, evaluation_metrics = load_models()
+try:
+    stacked_model, selected_features, scaler, evaluation_metrics = load_models()
+except Exception as e:
+    st.error("Error loading models or associated files. Ensure all necessary files are in the correct directory and not corrupted.")
+    raise e
 
 # Streamlit UI
 def main():
@@ -46,46 +54,52 @@ def main():
         uploaded_file = st.file_uploader("Upload input file (CSV format with selected features)", type="csv")
 
         if uploaded_file is not None:
-            input_data = pd.read_csv(uploaded_file)
+            try:
+                input_data = pd.read_csv(uploaded_file)
 
-            # Check if required features are in the input data
-            missing_features = [feature for feature in selected_features if feature not in input_data.columns]
-            if missing_features:
-                st.error(f"Missing required features: {missing_features}")
-            else:
-                predictions, probabilities = predict_default(input_data[selected_features], stacked_model, selected_features, scaler)
-                input_data["Prediction"] = predictions
-                input_data["Default Probability"] = probabilities
+                # Check if required features are in the input data
+                missing_features = [feature for feature in selected_features if feature not in input_data.columns]
+                if missing_features:
+                    st.error(f"Missing required features: {missing_features}")
+                else:
+                    predictions, probabilities = predict_default(input_data[selected_features], stacked_model, selected_features, scaler)
+                    input_data["Prediction"] = predictions
+                    input_data["Default Probability"] = probabilities
 
-                # Display predictions
-                st.write("Predictions:")
-                st.dataframe(input_data)
+                    # Display predictions
+                    st.write("Predictions:")
+                    st.dataframe(input_data)
 
-                # Option to download predictions
-                csv = input_data.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="Download Predictions as CSV",
-                    data=csv,
-                    file_name="predictions.csv",
-                    mime="text/csv",
-                )
+                    # Option to download predictions
+                    csv = input_data.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="Download Predictions as CSV",
+                        data=csv,
+                        file_name="predictions.csv",
+                        mime="text/csv",
+                    )
+            except Exception as e:
+                st.error(f"An error occurred while processing the uploaded file: {e}")
 
     elif choice == "Performance Metrics":
         st.title("Model Performance Metrics")
 
-        st.write("### Accuracy")
-        st.write(f"{evaluation_metrics['classification_report']['accuracy']:.4f}")
+        try:
+            st.write("### Accuracy")
+            st.write(f"{evaluation_metrics['classification_report']['accuracy']:.4f}")
 
-        st.write("### Precision")
-        st.write(f"{evaluation_metrics['classification_report']['1']['precision']:.4f}")
+            st.write("### Precision")
+            st.write(f"{evaluation_metrics['classification_report']['1']['precision']:.4f}")
 
-        st.write("### Recall")
-        st.write(f"{evaluation_metrics['classification_report']['1']['recall']:.4f}")
+            st.write("### Recall")
+            st.write(f"{evaluation_metrics['classification_report']['1']['recall']:.4f}")
 
-        st.write("### AUC-ROC")
-        st.write(f"{evaluation_metrics['auc_roc_score']:.4f}")
+            st.write("### AUC-ROC")
+            st.write(f"{evaluation_metrics['auc_roc_score']:.4f}")
 
-        st.write("For detailed insights, refer to the model evaluation JSON file.")
+            st.write("For detailed insights, refer to the model evaluation JSON file.")
+        except KeyError as e:
+            st.error(f"Missing or invalid evaluation metrics data: {e}")
 
 if __name__ == "__main__":
     main()
