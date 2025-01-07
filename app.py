@@ -39,7 +39,6 @@ def prediction():
     # File upload
     uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
     if uploaded_file:
-        # Load uploaded data
         input_data = pd.read_csv(uploaded_file)
         st.write("Uploaded Data Columns:", input_data.columns.tolist())
         st.write("Uploaded Data Shape:", input_data.shape)
@@ -54,16 +53,27 @@ def prediction():
         input_data = input_data[selected_features]
         st.write("Validated and Ordered Data Sample:")
         st.write(input_data.head())
-        
+
+        # Check data types
+        st.write("Data Types of Input Features:")
+        st.write(input_data.dtypes)
+
         # Apply scaling
         try:
             scaler = StandardScaler()
             input_data_scaled = scaler.fit_transform(input_data)
+            st.write("Scaled Data Shape:", input_data_scaled.shape)
             st.write("Scaled Data Sample:")
             st.write(input_data_scaled[:5])
         except Exception as e:
             st.error(f"Preprocessing failed: {e}")
             return
+        
+        # Ensure model feature alignment
+        try:
+            st.write("Model Expects Features:", stacked_model.n_features_)
+        except Exception as e:
+            st.error(f"Failed to retrieve model feature information: {e}")
         
         # Predict probabilities
         try:
