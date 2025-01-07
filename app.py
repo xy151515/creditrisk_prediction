@@ -75,8 +75,13 @@ def prediction():
         # Predict probabilities
         try:
             predictions_proba = stacked_model.predict_proba(input_data_scaled)[:, 1]
+            predictions = stacked_model.predict(input_data_scaled)
+
+            # Decode predictions (if needed)
+            decoded_predictions = label_encoder.inverse_transform(predictions)
+
             input_data["Default Probability"] = predictions_proba
-            input_data["Prediction"] = (predictions_proba > 0.5).astype(int)
+            input_data["Prediction"] = decoded_predictions
 
             st.write("Prediction Results:")
             st.write(input_data[["Default Probability", "Prediction"]])
