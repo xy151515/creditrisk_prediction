@@ -61,32 +61,30 @@ def prediction():
 
         # Preprocess non-numeric columns
         try:
-            # Convert necessary columns to numeric (example)
+            # Example preprocessing: convert necessary columns to numeric
             input_data['grade'] = input_data['grade'].astype(int)
             input_data['subGrade'] = input_data['subGrade'].astype(int)
             input_data['homeOwnership'] = input_data['homeOwnership'].astype(int)
-            # Add more preprocessing as required
         except Exception as e:
-            st.error(f"Preprocessing failed: {e}")
+            st.error(f"Error during preprocessing: {e}")
             return
 
         # Apply scaling
         try:
-            st.write("Data Passed to Scaler Shape:", input_data.shape)
+            st.write("Data Passed to Scaler (Before Scaling):")
+            st.write(input_data.head())
+            st.write("Shape of Data Passed to Scaler:", input_data.shape)
+
             scaler = StandardScaler()
             input_data_scaled = scaler.fit_transform(input_data)
-            st.write("Scaled Data Shape:", input_data_scaled.shape)
-            st.write("Scaled Data Sample:")
-            st.write(input_data_scaled[:5])
+
+            st.write("Scaled Data Shape (After Scaling):", input_data_scaled.shape)
+            if input_data_scaled.shape[1] != len(selected_features):
+                st.error(f"Mismatch: Model expects {len(selected_features)} features but got {input_data_scaled.shape[1]}")
+                return
         except Exception as e:
             st.error(f"Scaling failed: {e}")
             return
-
-        # Ensure model alignment
-        try:
-            st.write("Model Expects Features:", stacked_model.n_features_)
-        except Exception as e:
-            st.error(f"Failed to retrieve model feature information: {e}")
 
         # Predict probabilities
         try:
@@ -108,7 +106,6 @@ def prediction():
             st.error(f"Prediction failed: {e}")
     else:
         st.write("Please upload a file to proceed.")
-
 
 # Evaluation Metrics Page
 def evaluation():
