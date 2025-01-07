@@ -14,7 +14,7 @@ def clean_column_names(df):
 # Function to load the pre-trained model, scaler, and metrics
 @st.cache_data
 def load_model_scaler_and_metrics():
-    with open('trained_model.pkl', 'rb') as file:
+    with open('stacked_model.pkl', 'rb') as file:
         model = pickle.load(file)
     with open('scaler.pkl', 'rb') as file:
         scaler = pickle.load(file)
