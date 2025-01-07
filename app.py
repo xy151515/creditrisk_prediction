@@ -39,32 +39,26 @@ def prediction():
     # File upload
     uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
     if uploaded_file:
-        # Load and preview uploaded data
+        # Load uploaded data
         input_data = pd.read_csv(uploaded_file)
-        st.write("Uploaded Data Preview:")
-        st.write(input_data.head())
-        
-        # Debugging: Check features in the uploaded file
-        st.write("Uploaded Data Columns:", input_data.columns)
+        st.write("Uploaded Data Columns:", input_data.columns.tolist())
         st.write("Uploaded Data Shape:", input_data.shape)
         
-        # Validate required features
+        # Check for missing features
         missing_features = [col for col in selected_features if col not in input_data.columns]
-        if missing_features:
-            st.error(f"The following required features are missing: {missing_features}")
-            return  # Stop if features are missing
+        st.write("Missing Features:", missing_features)
+        for feature in missing_features:
+            input_data[feature] = 0  # Add missing features with default values
         
-        # Ensure the correct column order
+        # Reorder columns
         input_data = input_data[selected_features]
         st.write("Validated and Ordered Data Sample:")
         st.write(input_data.head())
-
-        # Apply preprocessing (example: scaling)
+        
+        # Apply scaling
         try:
             scaler = StandardScaler()
             input_data_scaled = scaler.fit_transform(input_data)
-            
-            # Debugging: Log scaled data
             st.write("Scaled Data Sample:")
             st.write(input_data_scaled[:5])
         except Exception as e:
@@ -77,11 +71,10 @@ def prediction():
             input_data["Default Probability"] = predictions_proba
             input_data["Prediction"] = (predictions_proba > 0.5).astype(int)
             
-            # Display results
             st.write("Prediction Results:")
             st.write(input_data[["Default Probability", "Prediction"]])
             
-            # Allow download
+            # Allow results download
             st.download_button(
                 label="Download Predictions as CSV",
                 data=input_data.to_csv(index=False),
