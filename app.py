@@ -5,38 +5,63 @@ import json
 
 def load_models():
     """Load the saved models and files."""
-    stacked_model = joblib.load("stacked_model_patched.pkl")  # Use the patched model
-    selected_features = joblib.load("selected_features.pkl")
+    import warnings
+    from sklearn.preprocessing import StandardScaler
+
+    warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+
     try:
+        stacked_model = joblib.load("stacked_model.pkl")
+        selected_features = joblib.load("selected_features.pkl")
         scaler = joblib.load("scaler.pkl")
-        if scaler is None:
-            raise ValueError("Scaler object is None.")
+        if not isinstance(scaler, StandardScaler):
+            raise ValueError("Scaler is not a valid StandardScaler instance.")
     except Exception as e:
-        raise ValueError(f"Error loading scaler: {e}")
+        st.error(f"Error loading models or scaler: {e}")
+        raise
 
     with open("evaluation_metrics.json", "r") as f:
         evaluation_metrics = json.load(f)
+
     return stacked_model, selected_features, scaler, evaluation_metrics
 
+def validate_input_data(input_data, selected_features):
+    """Validate the input data against selected features."""
+    missing_features = [feature for feature in selected_features if feature not in input_data.columns]
+    if missing_features:
+        raise ValueError(f"Missing features in input data: {missing_features}")
+
+    if input_data.isnull().values.any():
+        raise ValueError("Input data contains null values. Please clean the data.")
+
+    return input_data
 
 def predict_default(input_data, stacked_model, selected_features, scaler):
     """Predict loan default using the stacked model."""
     input_data = pd.DataFrame(input_data, columns=selected_features)
+
+    # Ensure the scaler is valid
+    if scaler is None or not hasattr(scaler, "transform"):
+        raise ValueError("Scaler is not initialized or improperly loaded.")
+
     try:
         scaled_data = scaler.transform(input_data)
-    except AttributeError as e:
-        raise ValueError("Scaler is not loaded correctly. Please check the scaler file.") from e
+    except Exception as e:
+        raise ValueError(f"Error during scaling: {e}")
 
-    predictions = stacked_model.predict(scaled_data)
-    probabilities = stacked_model.predict_proba(scaled_data)[:, 1]
+    try:
+        predictions = stacked_model.predict(scaled_data)
+        probabilities = stacked_model.predict_proba(scaled_data)[:, 1]
+    except Exception as e:
+        raise ValueError(f"Error during prediction: {e}")
+
     return predictions, probabilities
-
 
 # Load models and data
 try:
     stacked_model, selected_features, scaler, evaluation_metrics = load_models()
 except Exception as e:
-    st.error("Error loading models or associated files. Ensure all necessary files are in the correct directory and not corrupted.")
+    st.error("Failed to load models or associated files. Please check the uploaded model files.")
     raise e
 
 # Streamlit UI
@@ -64,28 +89,24 @@ def main():
         if uploaded_file is not None:
             try:
                 input_data = pd.read_csv(uploaded_file)
+                validate_input_data(input_data, selected_features)
 
-                # Check if required features are in the input data
-                missing_features = [feature for feature in selected_features if feature not in input_data.columns]
-                if missing_features:
-                    st.error(f"Missing required features: {missing_features}")
-                else:
-                    predictions, probabilities = predict_default(input_data[selected_features], stacked_model, selected_features, scaler)
-                    input_data["Prediction"] = predictions
-                    input_data["Default Probability"] = probabilities
+                predictions, probabilities = predict_default(input_data[selected_features], stacked_model, selected_features, scaler)
+                input_data["Prediction"] = predictions
+                input_data["Default Probability"] = probabilities
 
-                    # Display predictions
-                    st.write("Predictions:")
-                    st.dataframe(input_data)
+                # Display predictions
+                st.write("Predictions:")
+                st.dataframe(input_data)
 
-                    # Option to download predictions
-                    csv = input_data.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        label="Download Predictions as CSV",
-                        data=csv,
-                        file_name="predictions.csv",
-                        mime="text/csv",
-                    )
+                # Option to download predictions
+                csv = input_data.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    label="Download Predictions as CSV",
+                    data=csv,
+                    file_name="predictions.csv",
+                    mime="text/csv",
+                )
             except Exception as e:
                 st.error(f"An error occurred while processing the uploaded file: {e}")
 
