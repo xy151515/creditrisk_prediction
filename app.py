@@ -4,8 +4,8 @@ import joblib
 import json
 
 def load_models():
-    """Load the saved models and files."""
-    stacked_model = joblib.load("stacked_model.pkl")
+    """Load the patched model and associated files."""
+    stacked_model = joblib.load("stacked_model_patched.pkl")  # Use the patched model
     selected_features = joblib.load("selected_features.pkl")
     scaler = joblib.load("scaler.pkl")
     with open("evaluation_metrics.json", "r") as f:
