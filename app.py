@@ -28,13 +28,13 @@ def main():
     st.set_page_config(page_title="Loan Default Prediction", layout="wide")
 
     # Sidebar navigation
-    menu = ["Home", "Prediction", "Evaluation Metrics"]
-    choice = st.sidebar.selectbox("Navigation", menu)
+    menu = ["Home", "Prediction", "Performance Metrics"]
+    choice = st.sidebar.radio("Navigation", menu)
 
     if choice == "Home":
-        st.title("Welcome to the Loan Default Prediction App")
-        st.write("Use this app to predict whether a loan will default based on input data.")
-        st.write("Navigate to the Prediction section to make predictions or to the Evaluation Metrics section to view model performance.")
+        st.title("Credit Risk Prediction App")
+        st.write("Welcome to the Credit Risk Prediction App. Use this application to predict the likelihood of loan defaults based on input data.")
+        st.write("Navigate through the sidebar to explore features such as predictions and model performance metrics.")
 
     elif choice == "Prediction":
         st.title("Loan Default Prediction")
@@ -67,14 +67,22 @@ def main():
                     mime="text/csv",
                 )
 
-    elif choice == "Evaluation Metrics":
-        st.title("Evaluation Metrics")
+    elif choice == "Performance Metrics":
+        st.title("Model Performance Metrics")
 
-        st.write("### Classification Report")
-        st.json(evaluation_metrics["classification_report"])
+        st.write("### Accuracy")
+        st.write(f"{evaluation_metrics['classification_report']['accuracy']:.4f}")
 
-        st.write("### AUC-ROC Score")
+        st.write("### Precision")
+        st.write(f"{evaluation_metrics['classification_report']['1']['precision']:.4f}")
+
+        st.write("### Recall")
+        st.write(f"{evaluation_metrics['classification_report']['1']['recall']:.4f}")
+
+        st.write("### AUC-ROC")
         st.write(f"{evaluation_metrics['auc_roc_score']:.4f}")
+
+        st.write("For detailed insights, refer to the model evaluation JSON file.")
 
 if __name__ == "__main__":
     main()
