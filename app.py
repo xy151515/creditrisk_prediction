@@ -39,43 +39,32 @@ def prediction():
     # File upload
     uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
     if uploaded_file:
+        # Load uploaded data
         input_data = pd.read_csv(uploaded_file)
         st.write("Uploaded Data Columns:", input_data.columns.tolist())
         st.write("Uploaded Data Shape:", input_data.shape)
-
-        # Validate uploaded data
-        missing_features = [col for col in selected_features if col not in input_data.columns]
-        if missing_features:
-            st.error(f"The following required features are missing: {missing_features}")
-            for feature in missing_features:
-                input_data[feature] = 0  # Add missing features with default value
         
-        # Reorder columns to match model input
+        # Check for missing features
+        missing_features = [col for col in selected_features if col not in input_data.columns]
+        st.write("Missing Features:", missing_features)
+        for feature in missing_features:
+            input_data[feature] = 0  # Add missing features with default values
+        
+        # Reorder columns
         input_data = input_data[selected_features]
-        st.write("Data After Reordering Columns:")
+        st.write("Validated and Ordered Data Sample:")
         st.write(input_data.head())
-
-        # Validate data types
-        st.write("Data Types of Input Features:")
-        st.write(input_data.dtypes)
-
+        
         # Apply scaling
         try:
             scaler = StandardScaler()
             input_data_scaled = scaler.fit_transform(input_data)
-            st.write("Scaled Data Shape:", input_data_scaled.shape)
             st.write("Scaled Data Sample:")
             st.write(input_data_scaled[:5])
         except Exception as e:
-            st.error(f"Scaling failed: {e}")
+            st.error(f"Preprocessing failed: {e}")
             return
-
-        # Ensure model alignment
-        try:
-            st.write("Model Expects Features:", stacked_model.n_features_)
-        except Exception as e:
-            st.error(f"Failed to retrieve model feature information: {e}")
-
+        
         # Predict probabilities
         try:
             predictions_proba = stacked_model.predict_proba(input_data_scaled)[:, 1]
@@ -96,7 +85,6 @@ def prediction():
             st.error(f"Prediction failed: {e}")
     else:
         st.write("Please upload a file to proceed.")
-
 
 
 # Evaluation Metrics Page
