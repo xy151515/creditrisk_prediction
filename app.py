@@ -44,7 +44,7 @@ if menu == "Home":
 
 elif menu == "Training Data":
     st.subheader("Training Data")
-    train_file_path = 'train_sample.csv'
+    train_file_path = 'model_train.csv'
     model_train = pd.read_csv(train_file_path)
     st.write("### Training Data Preview")
     st.dataframe(model_train.head())
