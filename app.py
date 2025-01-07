@@ -39,6 +39,7 @@ def prediction():
     uploaded_file = st.file_uploader("Upload a CSV file for prediction", type="csv")
     
     if uploaded_file:
+        # Load and preview uploaded data
         input_data = pd.read_csv(uploaded_file)
         st.write("Uploaded Data Preview:")
         st.write(input_data.head())
@@ -48,21 +49,33 @@ def prediction():
         if missing_features:
             st.error(f"The following required features are missing: {missing_features}")
         else:
+            # Ensure columns are in the correct order
             input_data = input_data[selected_features]
-            predictions_proba = stacked_model.predict_proba(input_data)[:, 1]
+            
+            # Apply preprocessing (adjust based on your model training pipeline)
+            # Example: Scaling numerical features
+            from sklearn.preprocessing import StandardScaler
+            
+            scaler = StandardScaler()
+            input_data_scaled = scaler.fit_transform(input_data)  # Use the same scaler from training
+            
+            # Make predictions
+            predictions_proba = stacked_model.predict_proba(input_data_scaled)[:, 1]
             input_data["Default Probability"] = predictions_proba
             input_data["Prediction"] = (predictions_proba > 0.5).astype(int)
             
+            # Display results
             st.write("Prediction Results:")
             st.write(input_data[["Default Probability", "Prediction"]])
             
-            # Download results
+            # Allow user to download results
             st.download_button(
                 label="Download Predictions as CSV",
                 data=input_data.to_csv(index=False),
                 file_name="predictions.csv",
                 mime="text/csv",
             )
+
 
 # Evaluation Metrics Page
 def evaluation():
