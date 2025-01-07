@@ -90,7 +90,7 @@ def main():
         st.write("Navigate through the sidebar to explore features such as predictions and model performance metrics.")
 
     elif choice == "Prediction":
-    st.title("Loan Default Prediction")
+        st.title("Loan Default Prediction")
 
     # File uploader for input data
     uploaded_file = st.file_uploader("Upload input file (CSV format with selected features)", type="csv")
