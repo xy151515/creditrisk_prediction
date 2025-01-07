@@ -13,15 +13,17 @@ def load_models():
 
     try:
         stacked_model = joblib.load("stacked_model.pkl")
-        
+
         # Patch the _label_encoder attribute if missing
         if isinstance(stacked_model, StackingClassifier) and not hasattr(stacked_model, "_label_encoder"):
             stacked_model._label_encoder = None
 
         selected_features = joblib.load("selected_features.pkl")
         scaler = joblib.load("scaler.pkl")
-        if not isinstance(scaler, StandardScaler):
-            raise ValueError("Scaler is not a valid StandardScaler instance.")
+
+        if scaler is None or not hasattr(scaler, "transform"):
+            raise ValueError("Scaler is not initialized or improperly loaded. Please check scaler.pkl.")
+
     except Exception as e:
         st.error(f"Error loading models or scaler: {e}")
         raise
@@ -30,7 +32,6 @@ def load_models():
         evaluation_metrics = json.load(f)
 
     return stacked_model, selected_features, scaler, evaluation_metrics
-
 
 def validate_input_data(input_data, selected_features):
     """Validate the input data against selected features."""
@@ -43,13 +44,14 @@ def validate_input_data(input_data, selected_features):
 
     return input_data
 
+
 def predict_default(input_data, stacked_model, selected_features, scaler):
     """Predict loan default using the stacked model."""
     input_data = pd.DataFrame(input_data, columns=selected_features)
 
-    # Ensure the scaler is valid
+    # Ensure the scaler is valid before using it
     if scaler is None or not hasattr(scaler, "transform"):
-        raise ValueError("Scaler is not initialized or improperly loaded.")
+        raise ValueError("Scaler is not loaded correctly or is None. Please verify scaler.pkl.")
 
     try:
         scaled_data = scaler.transform(input_data)
@@ -63,7 +65,6 @@ def predict_default(input_data, stacked_model, selected_features, scaler):
         raise ValueError(f"Error during prediction: {e}")
 
     return predictions, probabilities
-
 
 # Load models and data
 try:
@@ -89,34 +90,35 @@ def main():
         st.write("Navigate through the sidebar to explore features such as predictions and model performance metrics.")
 
     elif choice == "Prediction":
-        st.title("Loan Default Prediction")
+    st.title("Loan Default Prediction")
 
-        # File uploader for input data
-        uploaded_file = st.file_uploader("Upload input file (CSV format with selected features)", type="csv")
+    # File uploader for input data
+    uploaded_file = st.file_uploader("Upload input file (CSV format with selected features)", type="csv")
 
-        if uploaded_file is not None:
-            try:
-                input_data = pd.read_csv(uploaded_file)
-                validate_input_data(input_data, selected_features)
+    if uploaded_file is not None:
+        try:
+            input_data = pd.read_csv(uploaded_file)
+            validate_input_data(input_data, selected_features)
 
-                predictions, probabilities = predict_default(input_data[selected_features], stacked_model, selected_features, scaler)
-                input_data["Prediction"] = predictions
-                input_data["Default Probability"] = probabilities
+            predictions, probabilities = predict_default(input_data[selected_features], stacked_model, selected_features, scaler)
+            input_data["Prediction"] = predictions
+            input_data["Default Probability"] = probabilities
 
-                # Display predictions
-                st.write("Predictions:")
-                st.dataframe(input_data)
+            # Display predictions
+            st.write("Predictions:")
+            st.dataframe(input_data)
 
-                # Option to download predictions
-                csv = input_data.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    label="Download Predictions as CSV",
-                    data=csv,
-                    file_name="predictions.csv",
-                    mime="text/csv",
-                )
-            except Exception as e:
-                st.error(f"An error occurred while processing the uploaded file: {e}")
+            # Option to download predictions
+            csv = input_data.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label="Download Predictions as CSV",
+                data=csv,
+                file_name="predictions.csv",
+                mime="text/csv",
+            )
+        except Exception as e:
+            st.error(f"An error occurred while processing the uploaded file: {e}")
+
 
     elif choice == "Performance Metrics":
         st.title("Model Performance Metrics")
